@@ -1,0 +1,38 @@
+name: Notion-Calendar Sync (Meetings)
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # Runs every 15 mins (cron is UTC)
+    - cron: "*/15 * * * *"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    concurrency:
+      # One run at a time; new runs queue instead of cancelling in-progress
+      group: notion-gcal-sync-meetings
+      cancel-in-progress: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run sync
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DB_ID: ${{ secrets.NOTION_DB_ID }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          CALENDAR_ID: ${{ secrets.CALENDAR_ID }}
+          NOTION_TITLE_PROPERTY: ${{ secrets.NOTION_TITLE_PROPERTY }}
+          NOTION_DATE_PROPERTY: ${{ secrets.NOTION_DATE_PROPERTY }}
+        run: python sync.py
